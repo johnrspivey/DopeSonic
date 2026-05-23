@@ -13,7 +13,7 @@ body{background:#080808;color:#f0ebe0;font-family:'DM Mono',monospace;min-height
 .ds-logo-row{display:flex;align-items:center;gap:1rem;position:relative;z-index:1}
 .ds-logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:0.06em;line-height:1}
 .ds-logo .am{color:#c8821a}.ds-logo .bl{color:#378ADD}
-.ds-tagline{font-size:10px;letter-spacing:0.2em;color:#3a3530;text-transform:uppercase;margin-top:0.35rem;position:relative;z-index:1}
+.ds-tagline{font-size:10px;letter-spacing:0.2em;color:#6a6560;text-transform:uppercase;margin-top:0.35rem;position:relative;z-index:1}
 .ds-progress{display:flex;gap:3px;padding:1rem 1.5rem 0;background:#080808}
 .ds-pip{height:2px;flex:1;background:#1a1a1a;transition:background 0.4s}
 .ds-pip.done{background:#c8821a}.ds-pip.active{background:#378ADD}
