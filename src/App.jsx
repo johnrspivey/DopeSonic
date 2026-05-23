@@ -1,60 +1,71 @@
 import { useState } from "react";
 
-const STEPS = ["artist", "guitar", "pickups", "strings", "amp", "speakers", "playback", "result"];
+const STEPS = ["artist","guitar","pickups","strings","amp","speakers","playback","result"];
+const LABELS = {artist:"Target Artist",guitar:"Your Guitar",pickups:"Pickups",strings:"Strings & Attack",amp:"Amp & Pedals",speakers:"Monitoring",playback:"Final Use",result:"Tone Blueprint"};
 
-const STEP_LABELS = {
-  artist: "Target Artist", guitar: "Your Guitar", pickups: "Pickups",
-  strings: "Strings & Attack", amp: "Amp & Pedals", speakers: "Monitoring",
-  playback: "Final Use", result: "Tone Blueprint",
-};
+const css = `
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080808;color:#f0ebe0;font-family:'DM Mono',monospace;min-height:100vh}
+#ds-root{max-width:640px;margin:0 auto}
+.ds-header{background:#080808;padding:2rem 1.5rem 1.5rem;border-bottom:1px solid #1a1a1a;position:relative;overflow:hidden}
+.ds-header-lines{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
+.ds-logo-row{display:flex;align-items:center;gap:1rem;position:relative;z-index:1}
+.ds-logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:0.06em;line-height:1}
+.ds-logo .am{color:#c8821a}.ds-logo .bl{color:#378ADD}
+.ds-tagline{font-size:10px;letter-spacing:0.2em;color:#3a3530;text-transform:uppercase;margin-top:0.35rem;position:relative;z-index:1}
+.ds-progress{display:flex;gap:3px;padding:1rem 1.5rem 0;background:#080808}
+.ds-pip{height:2px;flex:1;background:#1a1a1a;transition:background 0.4s}
+.ds-pip.done{background:#c8821a}.ds-pip.active{background:#378ADD}
+.ds-body{padding:1.5rem}
+.ds-step-lbl{font-size:10px;letter-spacing:0.16em;color:#2a2520;text-transform:uppercase;margin-bottom:0.4rem}
+.ds-title{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.05em;color:#f0ebe0;margin-bottom:0.2rem}
+.ds-sub{font-size:12px;color:#5a5248;line-height:1.7;margin-bottom:1.25rem}
+.ds-field{margin-bottom:0.85rem}
+.ds-lbl{display:block;font-size:10px;letter-spacing:0.14em;color:#c8821a;text-transform:uppercase;margin-bottom:0.3rem}
+.ds-input,.ds-select,.ds-textarea{width:100%;background:#0f0f0f;border:1px solid #1e1e1e;border-radius:4px;color:#f0ebe0;font-family:'DM Mono',monospace;font-size:13px;padding:9px 12px;outline:none;transition:border-color 0.2s}
+.ds-input:focus,.ds-select:focus,.ds-textarea:focus{border-color:#378ADD}
+.ds-textarea{resize:vertical;min-height:68px}
+.ds-select option{background:#0f0f0f}
+.ds-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ds-nav{display:flex;gap:8px;margin-top:1.5rem}
+.btn-back{flex:1;padding:11px 0;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;cursor:pointer;text-transform:uppercase;background:transparent;border:1px solid #1e1e1e;color:#3a3530;transition:all 0.2s}
+.btn-back:hover{border-color:#2e2e2e;color:#5a5248}
+.btn-next{flex:2;padding:11px 0;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;cursor:pointer;text-transform:uppercase;background:#c8821a;border:none;color:#080808;font-weight:500;transition:all 0.2s}
+.btn-next:hover{background:#e09420}
+.btn-ghost{flex:1;padding:11px 0;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:0.12em;cursor:pointer;text-transform:uppercase;background:transparent;border:1px solid #1e1e1e;color:#3a3530;transition:all 0.2s}
+.btn-ghost:hover{border-color:#378ADD;color:#378ADD}
+.ds-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:1rem}
+.ds-chip{background:#0f0f0f;border:1px solid #1a1a1a;border-radius:4px;padding:8px 10px}
+.ds-chip-lbl{font-size:10px;letter-spacing:0.12em;color:#c8821a;text-transform:uppercase}
+.ds-chip-val{font-size:12px;color:#f0ebe0;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ds-result{background:#0a0a0a;border:1px solid #1a1a1a;border-left:2px solid #378ADD;border-radius:4px;padding:1.25rem;font-size:13px;line-height:1.85;white-space:pre-wrap;color:#d0cbc0;min-height:200px}
+.ds-save-bar{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap}
+.ds-save-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;border:1px solid #1e1e1e;background:#0f0f0f;color:#3a3530;transition:all 0.2s}
+.ds-save-btn:hover{border-color:#c8821a;color:#c8821a}
+.ds-loading{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:3rem 0;color:#2a2520;font-size:11px;letter-spacing:0.14em;text-transform:uppercase}
+.ds-spinner{width:28px;height:28px;border-radius:50%;border:1.5px solid #1a1a1a;border-top-color:#378ADD;animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ds-error{color:#E24B4A;font-size:12px;margin-top:0.5rem}
+.ds-saved{font-size:11px;color:#c8821a;margin-top:6px;letter-spacing:0.08em}
+.ds-note{font-size:11px;color:#2a2520;margin-top:5px}
+`;
 
-const s = {
-  root: { maxWidth: 620, margin: "0 auto", padding: "2rem 1.25rem 3rem" },
-  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: "2.6rem", letterSpacing: "0.08em", lineHeight: 1, marginBottom: "0.2rem" },
-  logoAccent: { color: "#BA7517" },
-  tagline: { fontSize: 11, letterSpacing: "0.16em", color: "var(--text-2)", textTransform: "uppercase", marginBottom: "1.75rem" },
-  progressWrap: { display: "flex", gap: 4, marginBottom: "1.75rem" },
-  pip: (state) => ({ height: 3, flex: 1, borderRadius: 2, background: state === "done" ? "#BA7517" : state === "active" ? "#EF9F27" : "rgba(255,255,255,0.1)", transition: "background 0.3s" }),
-  stepLabel: { fontSize: 10, letterSpacing: "0.14em", color: "var(--text-3)", textTransform: "uppercase", marginBottom: "0.4rem" },
-  sectionTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.6rem", letterSpacing: "0.06em", marginBottom: "0.2rem" },
-  sectionSub: { fontSize: 12, color: "var(--text-2)", marginBottom: "1.25rem", lineHeight: 1.7 },
-  field: { marginBottom: "0.9rem" },
-  label: { display: "block", fontSize: 10, letterSpacing: "0.14em", color: "#BA7517", textTransform: "uppercase", marginBottom: "0.3rem" },
-  input: { width: "100%", background: "var(--bg-2)", border: "0.5px solid rgba(255,255,255,0.12)", borderRadius: 6, color: "var(--text)", fontFamily: "'DM Mono', monospace", fontSize: 13, padding: "8px 12px", outline: "none" },
-  select: { width: "100%", background: "var(--bg-2)", border: "0.5px solid rgba(255,255,255,0.12)", borderRadius: 6, color: "var(--text)", fontFamily: "'DM Mono', monospace", fontSize: 13, padding: "8px 12px", outline: "none" },
-  textarea: { width: "100%", background: "var(--bg-2)", border: "0.5px solid rgba(255,255,255,0.12)", borderRadius: 6, color: "var(--text)", fontFamily: "'DM Mono', monospace", fontSize: 13, padding: "8px 12px", outline: "none", resize: "vertical", minHeight: 72 },
-  row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-  nav: { display: "flex", gap: 10, marginTop: "1.5rem" },
-  btnBack: { flex: 1, padding: "10px 0", borderRadius: 6, fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: "0.1em", cursor: "pointer", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(255,255,255,0.15)", color: "var(--text-2)" },
-  btnNext: { flex: 2, padding: "10px 0", borderRadius: 6, fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: "0.1em", cursor: "pointer", textTransform: "uppercase", background: "#BA7517", border: "none", color: "#fff", fontWeight: 500 },
-  btnGhost: { flex: 1, padding: "10px 0", borderRadius: 6, fontFamily: "'DM Mono', monospace", fontSize: 12, letterSpacing: "0.1em", cursor: "pointer", textTransform: "uppercase", background: "transparent", border: "0.5px solid rgba(255,255,255,0.15)", color: "var(--text-2)" },
-  resultBox: { background: "var(--bg-2)", border: "0.5px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "1.25rem", fontSize: 13, lineHeight: 1.8, whiteSpace: "pre-wrap", color: "var(--text)", minHeight: 200 },
-  metaGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px,1fr))", gap: 8, marginBottom: "1rem" },
-  metaChip: { background: "var(--bg-2)", border: "0.5px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "8px 10px" },
-  metaLabel: { fontSize: 10, letterSpacing: "0.12em", color: "#BA7517", textTransform: "uppercase" },
-  metaVal: { fontSize: 12, color: "var(--text)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
-  saveBar: { display: "flex", gap: 8, marginTop: "1.25rem", flexWrap: "wrap" },
-  saveBtn: { display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", borderRadius: 6, fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: "0.08em", cursor: "pointer", textTransform: "uppercase", border: "0.5px solid rgba(255,255,255,0.15)", background: "var(--bg-2)", color: "var(--text-2)" },
-  loadingWrap: { display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", padding: "3rem 0", color: "var(--text-2)", fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase" },
-  errorText: { color: "var(--red)", fontSize: 12, marginTop: "0.5rem" },
-  gdNote: { fontSize: 11, color: "var(--text-3)", marginTop: 6 },
-};
-
-function Field({ label, fieldKey, placeholder, data, setData, type = "text" }) {
+function Field({ label, k, placeholder, data, setData, type="text" }) {
   return (
-    <div style={s.field}>
-      <label style={s.label}>{label}</label>
-      <input style={s.input} type={type} placeholder={placeholder} value={data[fieldKey] || ""}
-        onChange={e => setData(d => ({ ...d, [fieldKey]: e.target.value }))} />
+    <div className="ds-field">
+      <label className="ds-lbl">{label}</label>
+      <input className="ds-input" type={type} placeholder={placeholder} value={data[k]||""}
+        onChange={e => setData(d => ({...d, [k]: e.target.value}))} />
     </div>
   );
 }
 
-function SelectField({ label, fieldKey, options, data, setData }) {
+function Sel({ label, k, options, data, setData }) {
   return (
-    <div style={s.field}>
-      <label style={s.label}>{label}</label>
-      <select style={s.select} value={data[fieldKey] || ""} onChange={e => setData(d => ({ ...d, [fieldKey]: e.target.value }))}>
+    <div className="ds-field">
+      <label className="ds-lbl">{label}</label>
+      <select className="ds-select" value={data[k]||""} onChange={e => setData(d => ({...d, [k]: e.target.value}))}>
         <option value="">— select —</option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>
@@ -62,19 +73,38 @@ function SelectField({ label, fieldKey, options, data, setData }) {
   );
 }
 
-function TextareaField({ label, fieldKey, placeholder, data, setData }) {
+function TA({ label, k, placeholder, data, setData }) {
   return (
-    <div style={s.field}>
-      <label style={s.label}>{label}</label>
-      <textarea style={s.textarea} placeholder={placeholder} value={data[fieldKey] || ""}
-        onChange={e => setData(d => ({ ...d, [fieldKey]: e.target.value }))} />
+    <div className="ds-field">
+      <label className="ds-lbl">{label}</label>
+      <textarea className="ds-textarea" placeholder={placeholder} value={data[k]||""}
+        onChange={e => setData(d => ({...d, [k]: e.target.value}))} />
     </div>
   );
 }
 
-function Spinner() {
+function Logo() {
   return (
-    <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.1)", borderTopColor: "#BA7517", animation: "ds-spin 0.8s linear infinite" }} />
+    <div className="ds-logo-row">
+      <div>
+        <div className="ds-logo">Dope<span className="am">S</span><span className="bl">on</span><span className="am">ic</span></div>
+        <div className="ds-tagline">AI Tone Advisor · Bitwerx Labs</div>
+      </div>
+    </div>
+  );
+}
+
+function HeaderBg() {
+  return (
+    <svg className="ds-header-lines" viewBox="0 0 640 120" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <rect width="640" height="120" fill="#080808"/>
+      <path d="M480 0 L640 0 L640 120 L380 120 Z" fill="#0d0d0d"/>
+      <line x1="640" y1="0" x2="340" y2="120" stroke="#378ADD" strokeWidth="0.5" opacity="0.15"/>
+      <line x1="580" y1="0" x2="280" y2="120" stroke="#378ADD" strokeWidth="0.5" opacity="0.08"/>
+      <line x1="520" y1="0" x2="220" y2="120" stroke="#c8821a" strokeWidth="0.5" opacity="0.1"/>
+      <path d="M530 95 L538 60 L532 58 L552 10 L544 40 L552 42 L530 95Z" fill="#c8821a" opacity="0.1"/>
+      <path d="M555 80 L560 50 L556 48 L565 20 L560 42 L564 44 L555 80Z" fill="#378ADD" opacity="0.08"/>
+    </svg>
   );
 }
 
@@ -86,54 +116,50 @@ export default function App() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
 
-  const next = () => { setStep(i => i + 1); window.scrollTo(0, 0); };
-  const prev = () => { setStep(i => i - 1); window.scrollTo(0, 0); };
-
+  const next = () => { setStep(i => i+1); window.scrollTo(0,0); };
+  const prev = () => { setStep(i => i-1); window.scrollTo(0,0); };
   const artistRef = [data.artist, data.era].filter(Boolean).join(" — ");
 
   const buildPrompt = () => `You are DopeSonic, an expert guitar tone advisor. A guitarist wants to sound like ${artistRef}.
 
-First: recall everything documented about ${artistRef}'s actual gear — guitars, pickups, strings, amps, cabinets, pedals, settings, and techniques for that specific era or song. Be specific and factual.
+First: recall everything documented about ${artistRef}'s actual gear for that specific era or song. Be specific and factual.
 
 The user's rig:
-Guitar: ${data.guitarModel || "not specified"} | Body: ${data.bodyWood || "?"} | Neck: ${data.neckWood || "?"} | Fretboard: ${data.fretboard || "?"}
-Pickups: ${data.pickupModel || "not specified"} (${data.pickupType || ""}, ${data.pickupPos || ""}, ${data.pickupOutput || ""})
-Strings: ${data.stringGauge || "?"} ${data.stringMaterial || ""} | Pick: ${data.pickThickness || "?"} ${data.pickMaterial || ""} | Style: ${data.playStyle || "?"}
-Amp: ${data.ampModel || "not specified"} (${data.ampType || ""}) | Cabinet: ${data.cabinet || "?"}
-Pedals/Chain: ${data.pedals || "none specified"}
-Monitoring: ${data.monitoring || "?"} — ${data.monitorModel || ""} | Room: ${data.roomAcoustics || "?"}
-Final use: ${data.finalUse || "?"} | Mix context: ${data.listenerContext || "?"}
-${data.notes ? `Additional notes: ${data.notes}` : ""}
+Guitar: ${data.guitarModel||"not specified"} | Body: ${data.bodyWood||"?"} | Neck: ${data.neckWood||"?"} | Fretboard: ${data.fretboard||"?"}
+Pickups: ${data.pickupModel||"not specified"} (${data.pickupType||""}, ${data.pickupPos||""}, ${data.pickupOutput||""})
+Strings: ${data.stringGauge||"?"} ${data.stringMaterial||""} | Pick: ${data.pickThickness||"?"} ${data.pickMaterial||""} | Style: ${data.playStyle||"?"}
+Amp: ${data.ampModel||"not specified"} (${data.ampType||""}) | Cabinet: ${data.cabinet||"?"}
+Pedals/Chain: ${data.pedals||"none specified"}
+Monitoring: ${data.monitoring||"?"} — ${data.monitorModel||""} | Room: ${data.roomAcoustics||"?"}
+Final use: ${data.finalUse||"?"} | Mix context: ${data.listenerContext||"?"}
+${data.notes?"Additional notes: "+data.notes:""}
 
-Produce a structured Tone Blueprint with these exact sections:
+Produce a structured Tone Blueprint:
 
-🎸 ARTIST GEAR REFERENCE
-What ${artistRef} actually used (documented gear for this era/song).
+ARTIST GEAR REFERENCE
+What ${artistRef} actually used.
 
-📊 RIG GAP ANALYSIS
-How the user's rig compares — what's close, what's different, what matters most.
+RIG GAP ANALYSIS
+How the user's rig compares.
 
-🎛️ PHYSICAL GEAR ADJUSTMENTS
-Specific, precise changes: pickup height, tone/volume controls, pick technique, amp settings, pedal settings. Give real numbers (e.g. "Roll tone to 7, pick near the neck").
+PHYSICAL GEAR ADJUSTMENTS
+Specific changes with real numbers.
 
-🖥️ AMP SIM / SIGNAL CHAIN SETTINGS
-Recommended amp sim modules and settings if applicable. Otherwise amp channel/EQ/gain guidance.
+AMP SIM / SIGNAL CHAIN SETTINGS
+Recommended modules and settings.
 
-🔊 MONITORING COMPENSATION
-Tone adjustments to account for their monitoring setup vs the original recording context.
+MONITORING COMPENSATION
+Adjustments for their monitoring setup.
 
-⚡ QUICK WIN
-The single most impactful change they can make right now.
+QUICK WIN
+The single most impactful change right now.
 
-Be direct and specific. Write like a knowledgeable player, not generic AI. Reference real gear names and real numbers.`;
+Be direct. Write like a knowledgeable player. Real gear names and real numbers.`;
 
   const runAnalysis = async () => {
-    setStep(STEPS.length - 1);
-    setLoading(true);
-    setError("");
-    setResult("");
-    setSaved(false);
-    window.scrollTo(0, 0);
+    setStep(STEPS.length-1);
+    setLoading(true); setError(""); setResult(""); setSaved(false);
+    window.scrollTo(0,0);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -141,223 +167,178 @@ Be direct and specific. Write like a knowledgeable player, not generic AI. Refer
         body: JSON.stringify({ prompt: buildPrompt() }),
       });
       const json = await res.json();
-      const text = json.content?.map(c => c.text || "").join("") || "No response received.";
-      setResult(text);
-    } catch (e) {
+      setResult(json.content?.map(c => c.text||"").join("") || "No response received.");
+    } catch(e) {
       setError("Connection error — please try again.");
     }
     setLoading(false);
   };
 
-  const saveAsText = () => {
-    const header = `DOPESONIC TONE BLUEPRINT\nGenerated: ${new Date().toLocaleString()}\nArtist: ${artistRef}\nGear: ${data.guitarModel || ""} / ${data.ampModel || ""}\n${"—".repeat(48)}\n\n`;
-    const blob = new Blob([header + result], { type: "text/plain" });
+  const saveText = () => {
+    const h = "DOPESONIC TONE BLUEPRINT\nGenerated: "+new Date().toLocaleString()+"\nArtist: "+artistRef+"\nGear: "+(data.guitarModel||"")+" / "+(data.ampModel||"")+"\n"+"—".repeat(48)+"\n\n";
+    const b = new Blob([h+result], {type:"text/plain"});
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `dopesonic-${(data.artist || "tone").replace(/\s+/g, "-").toLowerCase()}.txt`;
-    a.click();
-    setSaved(true);
+    a.href = URL.createObjectURL(b);
+    a.download = "dopesonic-"+(data.artist||"tone").replace(/\s+/g,"-").toLowerCase()+".txt";
+    a.click(); setSaved(true);
   };
 
-  const saveAsJSON = () => {
-    const payload = { generated: new Date().toISOString(), rig: data, blueprint: result };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const saveJSON = () => {
+    const b = new Blob([JSON.stringify({generated:new Date().toISOString(),rig:data,blueprint:result},null,2)],{type:"application/json"});
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `dopesonic-${(data.artist || "tone").replace(/\s+/g, "-").toLowerCase()}.json`;
-    a.click();
-    setSaved(true);
+    a.href = URL.createObjectURL(b);
+    a.download = "dopesonic-"+(data.artist||"tone").replace(/\s+/g,"-").toLowerCase()+".json";
+    a.click(); setSaved(true);
   };
 
-  const currentStepName = STEPS[step];
+  const cur = STEPS[step];
 
   return (
     <>
-      <style>{`@keyframes ds-spin { to { transform: rotate(360deg); } } select option { background: #1e1e1e; }`}</style>
-      <div style={s.root}>
-        <div style={s.logo}>Dope<span style={s.logoAccent}>Sonic</span></div>
-        <div style={s.tagline}>AI Tone Advisor · Bitwerx Labs</div>
-
-        {/* Progress */}
-        <div style={s.progressWrap}>
-          {STEPS.map((st, i) => (
-            <div key={st} title={STEP_LABELS[st]} style={s.pip(i < step ? "done" : i === step ? "active" : "idle")} />
-          ))}
+      <style>{css}</style>
+      <div id="ds-root">
+        <div className="ds-header"><HeaderBg /><Logo /></div>
+        <div className="ds-progress">
+          {STEPS.map((s,i) => <div key={s} className={`ds-pip${i<step?" done":i===step?" active":""}`} title={LABELS[s]} />)}
         </div>
+        <div className="ds-body">
 
-        {/* Step: Artist */}
-        {currentStepName === "artist" && (
-          <>
-            <div style={s.stepLabel}>Step 1 of 7 · {STEP_LABELS.artist}</div>
-            <div style={s.sectionTitle}>Who's your target?</div>
-            <div style={s.sectionSub}>The player you want to sound like. Album, era, or song makes the advice much more precise.</div>
-            <Field label="Target artist" fieldKey="artist" placeholder="e.g. David Gilmour, John Mayer, Dimebag Darrell" data={data} setData={setData} />
-            <Field label="Era / album / song (optional)" fieldKey="era" placeholder="e.g. Comfortably Numb, Continuum, Vulgar Display of Power" data={data} setData={setData} />
-            <div style={s.nav}>
-              <button style={s.btnNext} onClick={next}>Next →</button>
-            </div>
-          </>
-        )}
+          {cur==="artist" && <>
+            <div className="ds-step-lbl">Step 1 of 7 · {LABELS.artist}</div>
+            <div className="ds-title">Who's your target?</div>
+            <div className="ds-sub">The player you want to sound like. Album, era, or song makes the advice much more precise.</div>
+            <Field label="Target artist" k="artist" placeholder="e.g. Eddie Van Halen, David Gilmour, John Mayer" data={data} setData={setData} />
+            <Field label="Era / album / song (optional)" k="era" placeholder="e.g. Eruption, Comfortably Numb, Slow Dancing in a Burning Room" data={data} setData={setData} />
+            <div className="ds-nav"><button className="btn-next" onClick={next}>Next →</button></div>
+          </>}
 
-        {/* Step: Guitar */}
-        {currentStepName === "guitar" && (
-          <>
-            <div style={s.stepLabel}>Step 2 of 7 · {STEP_LABELS.guitar}</div>
-            <div style={s.sectionTitle}>Your guitar</div>
-            <div style={s.sectionSub}>The instrument you're actually playing.</div>
-            <Field label="Make & model" fieldKey="guitarModel" placeholder="e.g. Fender Stratocaster, Gibson Les Paul Standard" data={data} setData={setData} />
-            <div style={s.row}>
-              <SelectField label="Body wood" fieldKey="bodyWood" options={["Alder","Ash","Mahogany","Basswood","Poplar","Maple","Semi-hollow","Hollow","Other"]} data={data} setData={setData} />
-              <SelectField label="Neck wood" fieldKey="neckWood" options={["Maple","Mahogany","Roasted Maple","Walnut","Other"]} data={data} setData={setData} />
+          {cur==="guitar" && <>
+            <div className="ds-step-lbl">Step 2 of 7 · {LABELS.guitar}</div>
+            <div className="ds-title">Your guitar</div>
+            <div className="ds-sub">The instrument you're actually playing.</div>
+            <Field label="Make & model" k="guitarModel" placeholder="e.g. Fender Stratocaster, Gibson Les Paul Standard" data={data} setData={setData} />
+            <div className="ds-row">
+              <Sel label="Body wood" k="bodyWood" options={["Alder","Ash","Mahogany","Basswood","Poplar","Maple","Semi-hollow","Hollow","Other"]} data={data} setData={setData} />
+              <Sel label="Neck wood" k="neckWood" options={["Maple","Mahogany","Roasted Maple","Walnut","Other"]} data={data} setData={setData} />
             </div>
-            <div style={s.row}>
-              <SelectField label="Fretboard" fieldKey="fretboard" options={["Rosewood","Maple","Ebony","Pau Ferro","Laurel","Other"]} data={data} setData={setData} />
-              <SelectField label="Scale length" fieldKey="scaleLength" options={['24.75" (Gibson)','25" (PRS)','25.5" (Fender)','26.5" (Baritone)',"Other"]} data={data} setData={setData} />
+            <div className="ds-row">
+              <Sel label="Fretboard" k="fretboard" options={["Rosewood","Maple","Ebony","Pau Ferro","Laurel","Other"]} data={data} setData={setData} />
+              <Sel label="Scale length" k="scaleLength" options={["24.75in Gibson","25in PRS","25.5in Fender","26.5in Baritone","Other"]} data={data} setData={setData} />
             </div>
-            <div style={s.nav}>
-              <button style={s.btnBack} onClick={prev}>← Back</button>
-              <button style={s.btnNext} onClick={next}>Next →</button>
+            <div className="ds-nav">
+              <button className="btn-back" onClick={prev}>← Back</button>
+              <button className="btn-next" onClick={next}>Next →</button>
             </div>
-          </>
-        )}
+          </>}
 
-        {/* Step: Pickups */}
-        {currentStepName === "pickups" && (
-          <>
-            <div style={s.stepLabel}>Step 3 of 7 · {STEP_LABELS.pickups}</div>
-            <div style={s.sectionTitle}>Pickups</div>
-            <div style={s.sectionSub}>What's driving the signal at the source.</div>
-            <Field label="Pickup make & model" fieldKey="pickupModel" placeholder="e.g. Seymour Duncan SSL-1, DiMarzio Super Distortion" data={data} setData={setData} />
-            <div style={s.row}>
-              <SelectField label="Pickup type" fieldKey="pickupType" options={["Single coil","Humbucker","P90","Filtertron","Lipstick","Active humbucker","Mini humbucker"]} data={data} setData={setData} />
-              <SelectField label="Position used most" fieldKey="pickupPos" options={["Bridge","Middle","Neck","Bridge+Middle","Neck+Middle","All three"]} data={data} setData={setData} />
+          {cur==="pickups" && <>
+            <div className="ds-step-lbl">Step 3 of 7 · {LABELS.pickups}</div>
+            <div className="ds-title">Pickups</div>
+            <div className="ds-sub">What's driving the signal at the source.</div>
+            <Field label="Pickup make & model" k="pickupModel" placeholder="e.g. Seymour Duncan SSL-1, DiMarzio Super Distortion" data={data} setData={setData} />
+            <div className="ds-row">
+              <Sel label="Type" k="pickupType" options={["Single coil","Humbucker","P90","Filtertron","Lipstick","Active humbucker","Mini humbucker"]} data={data} setData={setData} />
+              <Sel label="Position" k="pickupPos" options={["Bridge","Middle","Neck","Bridge+Middle","Neck+Middle","All three"]} data={data} setData={setData} />
             </div>
-            <SelectField label="Output level" fieldKey="pickupOutput" options={["Vintage / low output","Medium output","High output","Active (e.g. EMG)"]} data={data} setData={setData} />
-            <div style={s.nav}>
-              <button style={s.btnBack} onClick={prev}>← Back</button>
-              <button style={s.btnNext} onClick={next}>Next →</button>
+            <Sel label="Output level" k="pickupOutput" options={["Vintage / low output","Medium output","High output","Active (EMG)"]} data={data} setData={setData} />
+            <div className="ds-nav">
+              <button className="btn-back" onClick={prev}>← Back</button>
+              <button className="btn-next" onClick={next}>Next →</button>
             </div>
-          </>
-        )}
+          </>}
 
-        {/* Step: Strings */}
-        {currentStepName === "strings" && (
-          <>
-            <div style={s.stepLabel}>Step 4 of 7 · {STEP_LABELS.strings}</div>
-            <div style={s.sectionTitle}>Strings & Attack</div>
-            <div style={s.sectionSub}>How you hit the strings matters as much as what strings you use.</div>
-            <div style={s.row}>
-              <SelectField label="String gauge" fieldKey="stringGauge" options={[".008-.038",".009-.042",".010-.046",".010-.052",".011-.048",".011-.054",".012+"]} data={data} setData={setData} />
-              <SelectField label="String material" fieldKey="stringMaterial" options={["Nickel wound","Pure nickel","Stainless steel","Coated nickel","Flatwound","Other"]} data={data} setData={setData} />
+          {cur==="strings" && <>
+            <div className="ds-step-lbl">Step 4 of 7 · {LABELS.strings}</div>
+            <div className="ds-title">Strings & Attack</div>
+            <div className="ds-sub">How you hit the strings matters as much as what strings you use.</div>
+            <div className="ds-row">
+              <Sel label="String gauge" k="stringGauge" options={[".008-.038",".009-.042",".010-.046",".010-.052",".011-.048",".011-.054",".012+"]} data={data} setData={setData} />
+              <Sel label="Material" k="stringMaterial" options={["Nickel wound","Pure nickel","Stainless steel","Coated nickel","Flatwound","Other"]} data={data} setData={setData} />
             </div>
-            <div style={s.row}>
-              <SelectField label="Pick thickness" fieldKey="pickThickness" options={["Thin (< 0.6mm)","Medium (0.6–0.85mm)","Heavy (0.85–1.2mm)","Extra heavy (1.2mm+)","Fingers / no pick"]} data={data} setData={setData} />
-              <SelectField label="Pick material" fieldKey="pickMaterial" options={["Nylon","Celluloid","Tortex","Delrin","Ultex","Metal","Wood/Stone","Fingers"]} data={data} setData={setData} />
+            <div className="ds-row">
+              <Sel label="Pick thickness" k="pickThickness" options={["Thin under 0.6mm","Medium 0.6-0.85mm","Heavy 0.85-1.2mm","Extra heavy 1.2mm+","Fingers / no pick"]} data={data} setData={setData} />
+              <Sel label="Pick material" k="pickMaterial" options={["Nylon","Celluloid","Tortex","Delrin","Ultex","Metal","Wood or Stone","Fingers"]} data={data} setData={setData} />
             </div>
-            <SelectField label="Playing style" fieldKey="playStyle" options={["Clean fingerpicking","Light strumming","Rhythm / chunk","Lead / melodic","Heavy/palm mute","Heavy shred"]} data={data} setData={setData} />
-            <div style={s.nav}>
-              <button style={s.btnBack} onClick={prev}>← Back</button>
-              <button style={s.btnNext} onClick={next}>Next →</button>
+            <Sel label="Playing style" k="playStyle" options={["Clean fingerpicking","Light strumming","Rhythm / chunk","Lead / melodic","Heavy / palm mute","Heavy shred"]} data={data} setData={setData} />
+            <div className="ds-nav">
+              <button className="btn-back" onClick={prev}>← Back</button>
+              <button className="btn-next" onClick={next}>Next →</button>
             </div>
-          </>
-        )}
+          </>}
 
-        {/* Step: Amp */}
-        {currentStepName === "amp" && (
-          <>
-            <div style={s.stepLabel}>Step 5 of 7 · {STEP_LABELS.amp}</div>
-            <div style={s.sectionTitle}>Amp & Pedals</div>
-            <div style={s.sectionSub}>Your signal chain — physical gear and/or amp sim software.</div>
-            <Field label="Amp make & model" fieldKey="ampModel" placeholder="e.g. Marshall JCM800, Fender Twin Reverb, Guitar Rig 7" data={data} setData={setData} />
-            <div style={s.row}>
-              <SelectField label="Amp type" fieldKey="ampType" options={["Tube / valve","Solid state","Modeling / digital","Amp sim (software)","Hybrid"]} data={data} setData={setData} />
-              <SelectField label="Cabinet / IR" fieldKey="cabinet" options={["1x12","2x12","4x12","No cab (headphones/IR)","Built-in speaker","Other"]} data={data} setData={setData} />
+          {cur==="amp" && <>
+            <div className="ds-step-lbl">Step 5 of 7 · {LABELS.amp}</div>
+            <div className="ds-title">Amp & Pedals</div>
+            <div className="ds-sub">Your signal chain — physical gear and/or amp sim software.</div>
+            <Field label="Amp make & model" k="ampModel" placeholder="e.g. Marshall JCM800, Fender Twin Reverb, Guitar Rig 7" data={data} setData={setData} />
+            <div className="ds-row">
+              <Sel label="Amp type" k="ampType" options={["Tube / valve","Solid state","Modeling / digital","Amp sim software","Hybrid"]} data={data} setData={setData} />
+              <Sel label="Cabinet / IR" k="cabinet" options={["1x12","2x12","4x12","No cab / headphones","Built-in speaker","Other"]} data={data} setData={setData} />
             </div>
-            <TextareaField label="Key pedals / effects in chain" fieldKey="pedals" placeholder="e.g. Tube Screamer → Whammy → Carbon Copy delay, or list your Guitar Rig modules" data={data} setData={setData} />
-            <div style={s.nav}>
-              <button style={s.btnBack} onClick={prev}>← Back</button>
-              <button style={s.btnNext} onClick={next}>Next →</button>
+            <TA label="Key pedals / effects in chain" k="pedals" placeholder="e.g. Tube Screamer then Whammy then Carbon Copy delay, or list your Guitar Rig modules" data={data} setData={setData} />
+            <div className="ds-nav">
+              <button className="btn-back" onClick={prev}>← Back</button>
+              <button className="btn-next" onClick={next}>Next →</button>
             </div>
-          </>
-        )}
+          </>}
 
-        {/* Step: Speakers */}
-        {currentStepName === "speakers" && (
-          <>
-            <div style={s.stepLabel}>Step 6 of 7 · {STEP_LABELS.speakers}</div>
-            <div style={s.sectionTitle}>How you're monitoring</div>
-            <div style={s.sectionSub}>What you hear shapes how you dial in. This affects the compensation advice.</div>
-            <SelectField label="Monitoring setup" fieldKey="monitoring" options={["Guitar amp in the room","Studio monitors","Headphones","IEM (in-ear monitors)","PA/Live rig","Mixed (amp + DAW monitors)"]} data={data} setData={setData} />
-            <Field label="Monitor make & model (optional)" fieldKey="monitorModel" placeholder="e.g. Yamaha HS8, Sony MDR-7506" data={data} setData={setData} />
-            <SelectField label="Room acoustics" fieldKey="roomAcoustics" options={["Untreated bedroom / home studio","Partially treated room","Professional studio","Live stage","Direct / no room (headphones only)"]} data={data} setData={setData} />
-            <div style={s.nav}>
-              <button style={s.btnBack} onClick={prev}>← Back</button>
-              <button style={s.btnNext} onClick={next}>Next →</button>
+          {cur==="speakers" && <>
+            <div className="ds-step-lbl">Step 6 of 7 · {LABELS.speakers}</div>
+            <div className="ds-title">How you're monitoring</div>
+            <div className="ds-sub">What you hear shapes how you dial in. This affects the compensation advice.</div>
+            <Sel label="Monitoring setup" k="monitoring" options={["Guitar amp in the room","Studio monitors","Headphones","IEM in-ear monitors","PA / Live rig","Mixed amp + DAW monitors"]} data={data} setData={setData} />
+            <Field label="Monitor make & model (optional)" k="monitorModel" placeholder="e.g. Yamaha HS8, Sony MDR-7506" data={data} setData={setData} />
+            <Sel label="Room acoustics" k="roomAcoustics" options={["Untreated bedroom / home studio","Partially treated room","Professional studio","Live stage","Direct / no room (headphones)"]} data={data} setData={setData} />
+            <div className="ds-nav">
+              <button className="btn-back" onClick={prev}>← Back</button>
+              <button className="btn-next" onClick={next}>Next →</button>
             </div>
-          </>
-        )}
+          </>}
 
-        {/* Step: Playback */}
-        {currentStepName === "playback" && (
-          <>
-            <div style={s.stepLabel}>Step 7 of 7 · {STEP_LABELS.playback}</div>
-            <div style={s.sectionTitle}>Final destination</div>
-            <div style={s.sectionSub}>Where will this tone ultimately be heard? End use changes what "right" sounds like.</div>
-            <SelectField label="Primary use" fieldKey="finalUse" options={["Home practice / playing for fun","Recording to DAW","Streaming / content creation","Live performance","Studio session","Songwriting demos"]} data={data} setData={setData} />
-            <SelectField label="Listener context" fieldKey="listenerContext" options={["Solo guitar / no mix","Full band mix","Produced/mastered track","Unplugged / acoustic reference","Not sure yet"]} data={data} setData={setData} />
-            <TextareaField label="Anything else we should know?" fieldKey="notes" placeholder="Special requests, gear gaps vs target artist, context about the song, etc." data={data} setData={setData} />
-            <div style={s.nav}>
-              <button style={s.btnBack} onClick={prev}>← Back</button>
-              <button style={s.btnNext} onClick={runAnalysis}>Analyze My Tone ↗</button>
+          {cur==="playback" && <>
+            <div className="ds-step-lbl">Step 7 of 7 · {LABELS.playback}</div>
+            <div className="ds-title">Final destination</div>
+            <div className="ds-sub">Where will this tone ultimately be heard? End use changes what right sounds like.</div>
+            <Sel label="Primary use" k="finalUse" options={["Home practice / playing for fun","Recording to DAW","Streaming / content creation","Live performance","Studio session","Songwriting demos"]} data={data} setData={setData} />
+            <Sel label="Listener context" k="listenerContext" options={["Solo guitar / no mix","Full band mix","Produced / mastered track","Unplugged / acoustic reference","Not sure yet"]} data={data} setData={setData} />
+            <TA label="Anything else we should know" k="notes" placeholder="Special requests, gear gaps vs target artist, context about the song, etc." data={data} setData={setData} />
+            <div className="ds-nav">
+              <button className="btn-back" onClick={prev}>← Back</button>
+              <button className="btn-next" onClick={runAnalysis}>Analyze My Tone →</button>
             </div>
-          </>
-        )}
+          </>}
 
-        {/* Step: Result */}
-        {currentStepName === "result" && (
-          <>
-            <div style={s.stepLabel}>Result · {STEP_LABELS.result}</div>
-            <div style={s.sectionTitle}>Your Tone Blueprint</div>
-
-            {/* Meta chips */}
-            <div style={s.metaGrid}>
-              {[{ label: "Artist", val: data.artist || "—" }, { label: "Era/Song", val: data.era || "General" }, { label: "Guitar", val: data.guitarModel || "—" }, { label: "Amp", val: data.ampModel || "—" }].map(m => (
-                <div key={m.label} style={s.metaChip}>
-                  <div style={s.metaLabel}>{m.label}</div>
-                  <div style={s.metaVal}>{m.val}</div>
-                </div>
+          {cur==="result" && <>
+            <div className="ds-step-lbl">Result · {LABELS.result}</div>
+            <div className="ds-title">Your Tone Blueprint</div>
+            <div className="ds-meta">
+              {[{l:"Artist",v:data.artist||"—"},{l:"Era/Song",v:data.era||"General"},{l:"Guitar",v:data.guitarModel||"—"},{l:"Amp",v:data.ampModel||"—"}].map(m=>(
+                <div key={m.l} className="ds-chip"><div className="ds-chip-lbl">{m.l}</div><div className="ds-chip-val">{m.v}</div></div>
               ))}
             </div>
-
             {loading ? (
-              <div style={s.loadingWrap}>
-                <Spinner />
-                <div>Researching {data.artist || "your artist"}'s gear...</div>
-              </div>
+              <div className="ds-loading"><div className="ds-spinner"/><div>Researching {data.artist||"your artist"}'s gear...</div></div>
             ) : (
               <>
-                <div style={s.resultBox}>{result || "No result yet."}</div>
-                {error && <div style={s.errorText}>{error}</div>}
-
-                {result && (
-                  <>
-                    <div style={s.saveBar}>
-                      <button style={s.saveBtn} onClick={saveAsText}>↓ Save as .txt</button>
-                      <button style={s.saveBtn} onClick={saveAsJSON}>↓ Save as JSON</button>
-                    </div>
-                    {saved && <div style={{ fontSize: 11, color: "#BA7517", marginTop: 6 }}>Saved to your device.</div>}
-                    <div style={s.gdNote}>Tip: open the JSON file later to reload your full rig profile.</div>
-                  </>
-                )}
-
-                <div style={s.nav}>
-                  <button style={s.btnBack} onClick={prev}>← Edit Rig</button>
-                  {result && <button style={s.btnGhost} onClick={runAnalysis}>↺ Regenerate</button>}
+                <div className="ds-result">{result||"No result yet."}</div>
+                {error && <div className="ds-error">{error}</div>}
+                {result && <>
+                  <div className="ds-save-bar">
+                    <button className="ds-save-btn" onClick={saveText}>↓ Save .txt</button>
+                    <button className="ds-save-btn" onClick={saveJSON}>↓ Save .json</button>
+                  </div>
+                  {saved && <div className="ds-saved">Saved to your device.</div>}
+                  <div className="ds-note">Tip: the JSON stores your full rig profile for reloading later.</div>
+                </>}
+                <div className="ds-nav" style={{marginTop:"1rem"}}>
+                  <button className="btn-back" onClick={prev}>← Edit Rig</button>
+                  {result && <button className="btn-ghost" onClick={runAnalysis}>↺ Regenerate</button>}
                 </div>
               </>
             )}
-          </>
-        )}
+          </>}
+
+        </div>
       </div>
     </>
   );
