@@ -99,7 +99,7 @@ function HeaderBg() {
     <div className="ds-header-lines" style={{
       backgroundImage: "linear-gradient(to right, #080808 25%, rgba(8,8,8,0.7) 55%, rgba(8,8,8,0.3) 100%), url('/hero.jpg')",
       backgroundSize: "cover",
-      backgroundPosition: "right center",
+      backgroundPosition: "right 15%",
       backgroundRepeat: "no-repeat",
       opacity: 0.85,
     }} />
