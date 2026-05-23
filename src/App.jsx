@@ -96,15 +96,13 @@ function Logo() {
 
 function HeaderBg() {
   return (
-    <svg className="ds-header-lines" viewBox="0 0 640 120" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
-      <rect width="640" height="120" fill="#080808"/>
-      <path d="M480 0 L640 0 L640 120 L380 120 Z" fill="#0d0d0d"/>
-      <line x1="640" y1="0" x2="340" y2="120" stroke="#378ADD" strokeWidth="0.5" opacity="0.15"/>
-      <line x1="580" y1="0" x2="280" y2="120" stroke="#378ADD" strokeWidth="0.5" opacity="0.08"/>
-      <line x1="520" y1="0" x2="220" y2="120" stroke="#c8821a" strokeWidth="0.5" opacity="0.1"/>
-      <path d="M530 95 L538 60 L532 58 L552 10 L544 40 L552 42 L530 95Z" fill="#c8821a" opacity="0.1"/>
-      <path d="M555 80 L560 50 L556 48 L565 20 L560 42 L564 44 L555 80Z" fill="#378ADD" opacity="0.08"/>
-    </svg>
+    <div className="ds-header-lines" style={{
+      backgroundImage: "linear-gradient(to right, #080808 25%, rgba(8,8,8,0.7) 55%, rgba(8,8,8,0.3) 100%), url('/hero.jpg')",
+      backgroundSize: "cover",
+      backgroundPosition: "right top",
+      backgroundRepeat: "no-repeat",
+      opacity: 0.5,
+    }} />
   );
 }
 
