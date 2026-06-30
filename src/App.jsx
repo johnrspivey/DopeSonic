@@ -4,6 +4,8 @@ import ToneAdvisor from "./ToneAdvisor.jsx";
 import CAGEDExplorer from "./pages/CAGEDExplorer.jsx";
 import DoubleStopsTriads from "./pages/DoubleStopsTriads.jsx";
 import ModeExplorer from "./pages/ModeExplorer.jsx";
+import PentaExplorer from "./pages/PentaExplorer.jsx";
+import NoteFinder from "./pages/NoteFinder.jsx";
 
 const NAV_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
@@ -52,7 +54,7 @@ body { background: #080808; color: #f0ebe0; font-family: 'DM Mono', monospace; m
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 8px 14px;
+  padding: 8px 12px;
   color: #4a4540;
   text-decoration: none;
   border-bottom: 2px solid transparent;
@@ -71,9 +73,6 @@ body { background: #080808; color: #f0ebe0; font-family: 'DM Mono', monospace; m
 `;
 
 function SiteHeader() {
-  const loc = useLocation();
-  const isTheory = ['/caged','/theory','/modes'].some(p => loc.pathname.startsWith(p));
-
   return (
     <div className="ds-site-header">
       <div className="ds-logo-row">
@@ -84,16 +83,22 @@ function SiteHeader() {
       </div>
       <div className="ds-nav-tabs">
         <NavLink to="/" end className={({isActive}) => `ds-nav-tab${isActive?' active':''}`}>
-          Tone Advisor
+          Tone
         </NavLink>
         <NavLink to="/caged" className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>
           CAGED
         </NavLink>
         <NavLink to="/theory" className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>
-          Stops & Triads
+          Stops
         </NavLink>
         <NavLink to="/modes" className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>
           Modes
+        </NavLink>
+        <NavLink to="/penta" className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>
+          Penta
+        </NavLink>
+        <NavLink to="/notes" className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>
+          Notes
         </NavLink>
       </div>
     </div>
@@ -112,6 +117,8 @@ export default function App() {
             <Route path="/caged" element={<CAGEDExplorer />} />
             <Route path="/theory" element={<DoubleStopsTriads />} />
             <Route path="/modes" element={<ModeExplorer />} />
+            <Route path="/penta" element={<PentaExplorer />} />
+            <Route path="/notes" element={<NoteFinder />} />
           </Routes>
         </BrowserRouter>
       </div>
