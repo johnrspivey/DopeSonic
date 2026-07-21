@@ -5,6 +5,7 @@ import CAGEDExplorer from "./pages/CAGEDExplorer.jsx";
 import DoubleStopsTriads from "./pages/DoubleStopsTriads.jsx";
 import ModeExplorer from "./pages/ModeExplorer.jsx";
 import PentaExplorer from "./pages/PentaExplorer.jsx";
+import MinorExplorer from "./pages/MinorExplorer.jsx";
 import NoteFinder from "./pages/NoteFinder.jsx";
 import FirstBeat from "./pages/FirstBeat.jsx";
 
@@ -25,6 +26,7 @@ body { background: #080808; color: #f0ebe0; font-family: 'DM Mono', monospace; m
 .ds-nav-tab:hover { color: #8a8078; }
 .ds-nav-tab.active { color: #c8821a; border-bottom-color: #c8821a; }
 .ds-nav-tab.theory-active { color: #378ADD; border-bottom-color: #378ADD; }
+.ds-nav-tab.minor-active { color: #e05c5c; border-bottom-color: #e05c5c; }
 .ds-nav-tab.drums-active { color: #e05c5c; border-bottom-color: #e05c5c; }
 `;
 
@@ -43,6 +45,7 @@ function SiteHeader() {
         <NavLink to="/theory"  className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>Stops</NavLink>
         <NavLink to="/modes"   className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>Modes</NavLink>
         <NavLink to="/penta"   className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>Penta</NavLink>
+        <NavLink to="/minor"   className={({isActive}) => `ds-nav-tab${isActive?' minor-active':''}`}>Minor</NavLink>
         <NavLink to="/notes"   className={({isActive}) => `ds-nav-tab${isActive?' theory-active':''}`}>Notes</NavLink>
         <NavLink to="/drums"   className={({isActive}) => `ds-nav-tab${isActive?' drums-active':''}`}>Drums</NavLink>
       </div>
@@ -63,6 +66,7 @@ export default function App() {
             <Route path="/theory" element={<DoubleStopsTriads />} />
             <Route path="/modes"  element={<ModeExplorer />} />
             <Route path="/penta"  element={<PentaExplorer />} />
+            <Route path="/minor"  element={<MinorExplorer />} />
             <Route path="/notes"  element={<NoteFinder />} />
             <Route path="/drums"  element={<FirstBeat />} />
           </Routes>
