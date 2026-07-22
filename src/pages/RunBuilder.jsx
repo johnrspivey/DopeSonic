@@ -19,6 +19,7 @@ const SUBDIVISIONS = {
   triplet: { label: '1/8 triplet', beats: 1 / 3 },
   sixteenth: { label: '1/16', beats: 0.25 },
 };
+const SUB_CYCLE = [null, 'quarter', 'eighth', 'triplet', 'sixteenth'];
 
 const NUM_FRETS = 15;
 
@@ -59,14 +60,30 @@ export default function RunBuilder() {
   const stopFlagRef = useRef(false);
   const idCounter = useRef(0);
 
-  const noteDur = (60 / tempo) * SUBDIVISIONS[subdivision].beats;
+  // note.sub === null means "use the global subdivision" (the fast path — set tempo/subdivision
+  // once and every note follows it). Set an override on individual notes when you need one note
+  // to sit longer or shorter than the rest.
+  function effectiveDur(note) {
+    return (60 / tempo) * SUBDIVISIONS[note.sub || subdivision].beats;
+  }
 
   function addNote(strIdx, fret) {
     idCounter.current += 1;
-    setNotes(n => [...n, { id: idCounter.current, strIdx, fret }]);
+    setNotes(n => [...n, { id: idCounter.current, strIdx, fret, sub: null }]);
   }
   function removeNote(id) {
     setNotes(n => n.filter(x => x.id !== id));
+  }
+  function cycleNoteSub(id) {
+    setNotes(n => n.map(x => {
+      if (x.id !== id) return x;
+      const curIdx = SUB_CYCLE.indexOf(x.sub);
+      const next = SUB_CYCLE[(curIdx + 1) % SUB_CYCLE.length];
+      return { ...x, sub: next };
+    }));
+  }
+  function resetAllToGlobal() {
+    setNotes(n => n.map(x => ({ ...x, sub: null })));
   }
   function clearAll() {
     setNotes([]);
@@ -81,17 +98,23 @@ export default function RunBuilder() {
     setPlaying(true);
 
     const runOnce = () => new Promise(resolve => {
+      const durs = notes.map(effectiveDur);
+      const starts = [];
+      let acc = 0;
+      durs.forEach(d => { starts.push(acc); acc += d; });
+      const totalDur = acc;
       const startTime = ctx.currentTime + 0.05;
       notes.forEach((nt, i) => {
-        playPluck(ctx, freqAt(nt.strIdx, nt.fret), startTime + i * noteDur, noteDur);
+        playPluck(ctx, freqAt(nt.strIdx, nt.fret), startTime + starts[i], durs[i]);
       });
-      const totalDur = notes.length * noteDur;
       const t0 = performance.now();
       function tick() {
         if (stopFlagRef.current) { resolve(); return; }
         const elapsed = (performance.now() - t0) / 1000;
         if (elapsed < totalDur) {
-          setPlayIdx(Math.min(notes.length - 1, Math.floor(elapsed / noteDur)));
+          let idx = 0;
+          for (let i = 0; i < starts.length; i++) { if (elapsed >= starts[i]) idx = i; else break; }
+          setPlayIdx(idx);
           requestAnimationFrame(tick);
         } else {
           setPlayIdx(-1);
@@ -132,24 +155,38 @@ export default function RunBuilder() {
       <InteractiveFretboard onAdd={addNote} numFrets={NUM_FRETS} />
 
       <div style={{ fontFamily: 'Georgia,serif', fontSize: '1.05rem', color: '#7ec8a4', marginBottom: 10, marginTop: 20, borderTop: '1px solid #222', paddingTop: 16 }}>Your Run</div>
+      <div style={{ fontSize: '0.7rem', color: '#555', marginBottom: 10 }}>Tap a note to remove it. Tap the small badge under it to give that note its own duration — leave it on "auto" to just follow the global tempo/subdivision below.</div>
       <DiagramCard accent="#7ec8a4">
         {notes.length === 0 ? (
           <div style={{ fontSize: '0.78rem', color: '#555', textAlign: 'center', padding: '12px 0' }}>Tap frets above to start building a run</div>
         ) : (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
             {notes.map((nt, i) => (
-              <button key={nt.id} onClick={() => removeNote(nt.id)} title="Tap to remove" style={{
-                fontFamily: 'monospace', fontSize: '0.7rem', padding: '6px 8px', borderRadius: 5, cursor: 'pointer',
-                border: i === playIdx ? '2px solid #7ec8a4' : '1px solid #333',
-                background: i === playIdx ? 'rgba(126,200,164,0.25)' : '#1a1a1a',
-                color: '#ccc', textAlign: 'center', lineHeight: 1.5,
-              }}>
-                {STRING_NAMES[nt.strIdx]}·{nt.fret}<br /><span style={{ color: '#7ec8a4' }}>{noteNameAt(nt.strIdx, nt.fret)}</span>
-              </button>
+              <div key={nt.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <button onClick={() => removeNote(nt.id)} title="Tap to remove" style={{
+                  fontFamily: 'monospace', fontSize: '0.7rem', padding: '6px 8px', borderRadius: 5, cursor: 'pointer',
+                  border: i === playIdx ? '2px solid #7ec8a4' : '1px solid #333',
+                  background: i === playIdx ? 'rgba(126,200,164,0.25)' : '#1a1a1a',
+                  color: '#ccc', textAlign: 'center', lineHeight: 1.5,
+                }}>
+                  {STRING_NAMES[nt.strIdx]}·{nt.fret}<br /><span style={{ color: '#7ec8a4' }}>{noteNameAt(nt.strIdx, nt.fret)}</span>
+                </button>
+                <button onClick={() => cycleNoteSub(nt.id)} title="Tap to set this note's duration" style={{
+                  fontSize: '0.56rem', padding: '2px 6px', borderRadius: 4, cursor: 'pointer',
+                  border: nt.sub ? '1px solid #7ec8a4' : '1px solid #2a2a2a',
+                  background: nt.sub ? 'rgba(126,200,164,0.15)' : '#161616',
+                  color: nt.sub ? '#7ec8a4' : '#555',
+                }}>
+                  {nt.sub ? SUBDIVISIONS[nt.sub].label : 'auto'}
+                </button>
+              </div>
             ))}
           </div>
         )}
-        <button onClick={clearAll} disabled={notes.length === 0} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: notes.length ? 'pointer' : 'default' }}>Clear all</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={clearAll} disabled={notes.length === 0} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: notes.length ? 'pointer' : 'default' }}>Clear all</button>
+          <button onClick={resetAllToGlobal} disabled={notes.length === 0} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: notes.length ? 'pointer' : 'default' }}>Reset durations to auto</button>
+        </div>
       </DiagramCard>
 
       <div style={{ fontFamily: 'Georgia,serif', fontSize: '1.05rem', color: '#7ec8a4', marginBottom: 10, marginTop: 20, borderTop: '1px solid #222', paddingTop: 16 }}>Playback</div>
@@ -161,6 +198,7 @@ export default function RunBuilder() {
           </div>
           <input type="range" min={40} max={220} value={tempo} onChange={e => setTempo(parseInt(e.target.value))} style={{ flex: 1, minWidth: 120 }} />
         </div>
+        <div style={{ fontSize: '0.62rem', color: '#555', marginBottom: 6 }}>global subdivision (used by any note set to "auto")</div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
           {Object.keys(SUBDIVISIONS).map(k => (
             <button key={k} onClick={() => setSubdivision(k)} style={{
