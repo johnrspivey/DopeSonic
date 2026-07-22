@@ -5,6 +5,7 @@ import { NOTES, STRING_NAMES, PAGE_STYLE, DiagramCard } from "../lib/fretboard";
 const OPEN_FREQ = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
 const OPEN_NOTE_IDX = [4, 9, 2, 7, 11, 4];
 const FRET_MARKERS = [3, 5, 7, 9, 12, 15];
+const STORAGE_KEY = 'dopesonic_runbuilder_licks';
 
 function noteNameAt(strIdx, fret) {
   return NOTES[(OPEN_NOTE_IDX[strIdx] + fret) % 12];
@@ -49,6 +50,18 @@ function playPluck(ctx, freq, startTime, dur) {
   osc2.stop(startTime + dur + 0.05);
 }
 
+function loadSavedLicks() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+function persistLicks(licks) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(licks)); } catch { /* storage unavailable, ignore */ }
+}
+
 export default function RunBuilder() {
   const [notes, setNotes] = useState([]);
   const [tempo, setTempo] = useState(90);
@@ -56,9 +69,14 @@ export default function RunBuilder() {
   const [loop, setLoop] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [playIdx, setPlayIdx] = useState(-1);
+  const [savedLicks, setSavedLicks] = useState([]);
+  const [saveName, setSaveName] = useState('');
+  const [showSaveInput, setShowSaveInput] = useState(false);
   const ctxRef = useRef(null);
   const stopFlagRef = useRef(false);
   const idCounter = useRef(0);
+
+  useEffect(() => { setSavedLicks(loadSavedLicks()); }, []);
 
   // note.sub === null means "use the global subdivision" (the fast path — set tempo/subdivision
   // once and every note follows it). Set an override on individual notes when you need one note
@@ -87,6 +105,33 @@ export default function RunBuilder() {
   }
   function clearAll() {
     setNotes([]);
+  }
+
+  function saveLick() {
+    const name = saveName.trim() || `Lick ${savedLicks.length + 1}`;
+    const lick = {
+      id: Date.now(),
+      name,
+      tempo,
+      subdivision,
+      notes: notes.map(({ strIdx, fret, sub }) => ({ strIdx, fret, sub })),
+      savedAt: new Date().toISOString(),
+    };
+    const next = [lick, ...savedLicks];
+    setSavedLicks(next);
+    persistLicks(next);
+    setSaveName('');
+    setShowSaveInput(false);
+  }
+  function loadLick(lick) {
+    setNotes(lick.notes.map(nt => { idCounter.current += 1; return { id: idCounter.current, ...nt }; }));
+    setTempo(lick.tempo);
+    setSubdivision(lick.subdivision);
+  }
+  function deleteLick(id) {
+    const next = savedLicks.filter(l => l.id !== id);
+    setSavedLicks(next);
+    persistLicks(next);
   }
 
   async function play() {
@@ -183,9 +228,18 @@ export default function RunBuilder() {
             ))}
           </div>
         )}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={clearAll} disabled={notes.length === 0} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: notes.length ? 'pointer' : 'default' }}>Clear all</button>
           <button onClick={resetAllToGlobal} disabled={notes.length === 0} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: notes.length ? 'pointer' : 'default' }}>Reset durations to auto</button>
+          {!showSaveInput ? (
+            <button onClick={() => setShowSaveInput(true)} disabled={notes.length === 0} style={{ fontSize: '0.72rem', padding: '6px 12px', borderRadius: 5, border: '1px solid #7ec8a4', background: notes.length ? 'rgba(126,200,164,0.15)' : '#1a1a1a', color: notes.length ? '#7ec8a4' : '#555', cursor: notes.length ? 'pointer' : 'default' }}>💾 Save this lick</button>
+          ) : (
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input value={saveName} onChange={e => setSaveName(e.target.value)} placeholder={`Lick ${savedLicks.length + 1}`} style={{ fontSize: '0.72rem', padding: '6px 8px', borderRadius: 5, border: '1px solid #333', background: '#111', color: '#eee', width: 130 }} onKeyDown={e => { if (e.key === 'Enter') saveLick(); }} autoFocus />
+              <button onClick={saveLick} style={{ fontSize: '0.72rem', padding: '6px 10px', borderRadius: 5, border: 'none', background: '#7ec8a4', color: '#000', cursor: 'pointer' }}>Save</button>
+              <button onClick={() => { setShowSaveInput(false); setSaveName(''); }} style={{ fontSize: '0.72rem', padding: '6px 10px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: 'pointer' }}>Cancel</button>
+            </div>
+          )}
         </div>
       </DiagramCard>
 
@@ -219,6 +273,27 @@ export default function RunBuilder() {
             <input type="checkbox" checked={loop} onChange={e => setLoop(e.target.checked)} /> Loop
           </label>
         </div>
+      </DiagramCard>
+
+      <div style={{ fontFamily: 'Georgia,serif', fontSize: '1.05rem', color: '#7ec8a4', marginBottom: 10, marginTop: 20, borderTop: '1px solid #222', paddingTop: 16 }}>Saved Licks</div>
+      <div style={{ fontSize: '0.7rem', color: '#555', marginBottom: 10 }}>Saved to this browser/device only — not synced across devices yet.</div>
+      <DiagramCard accent="#7ec8a4">
+        {savedLicks.length === 0 ? (
+          <div style={{ fontSize: '0.78rem', color: '#555', textAlign: 'center', padding: '8px 0' }}>Nothing saved yet — build a run above and hit "Save this lick"</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {savedLicks.map(lick => (
+              <div key={lick.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '8px 10px', borderRadius: 6, border: '1px solid #2a2a2a', background: '#161616' }}>
+                <div onClick={() => loadLick(lick)} style={{ cursor: 'pointer', flex: 1 }}>
+                  <div style={{ fontFamily: 'Georgia,serif', fontSize: '0.9rem', color: '#eee' }}>{lick.name}</div>
+                  <div style={{ fontSize: '0.62rem', color: '#666', fontFamily: 'monospace', marginTop: 2 }}>{lick.notes.length} notes · {lick.tempo} bpm · {SUBDIVISIONS[lick.subdivision].label}</div>
+                </div>
+                <button onClick={() => loadLick(lick)} style={{ fontSize: '0.68rem', padding: '5px 10px', borderRadius: 5, border: '1px solid #7ec8a4', background: 'rgba(126,200,164,0.15)', color: '#7ec8a4', cursor: 'pointer' }}>Load</button>
+                <button onClick={() => deleteLick(lick.id)} style={{ fontSize: '0.68rem', padding: '5px 8px', borderRadius: 5, border: '1px solid #333', background: '#1a1a1a', color: '#888', cursor: 'pointer' }}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
       </DiagramCard>
 
       <p style={{ fontSize: '0.68rem', color: '#444', marginTop: 14, lineHeight: 1.5 }}>Synthesized playback — not a recording. Good enough to judge if a run sounds right before you ever pick up the guitar.</p>
